@@ -1,11 +1,9 @@
 import express from 'express';
 import cors from 'cors';
-import dotenv from 'dotenv';
-
-dotenv.config();
+import { ENV } from './config/env';
+import webhookRoutes from './routes/webhook.routes';
 
 const app = express();
-const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(express.json());
@@ -15,12 +13,15 @@ app.get('/health', (req, res) => {
   res.json({ status: 'OK', message: 'Backend del Asistente IA funcionando correctamente.' });
 });
 
-// Endpoint Webhook (Fase 3 - Se implementará la lógica de OpenAI aquí)
-app.post('/webhook', (req, res) => {
-  console.log('Webhook recibido:', req.body);
-  res.json({ success: true, message: 'Webhook procesado' });
+// Registrar Rutas
+app.use('/webhook', webhookRoutes);
+
+// Middleware de manejo de errores global
+app.use((err: any, req: express.Request, res: express.Response, next: express.NextFunction) => {
+  console.error('[Global Error]:', err);
+  res.status(500).json({ error: 'Ocurrió un error interno en el servidor.' });
 });
 
-app.listen(PORT, () => {
-  console.log(`Servidor Backend ejecutándose en http://localhost:${PORT}`);
+app.listen(ENV.PORT, () => {
+  console.log(`🚀 Servidor Backend ejecutándose en http://localhost:${ENV.PORT}`);
 });
