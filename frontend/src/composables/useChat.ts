@@ -27,11 +27,17 @@ export function useChat() {
 
     try {
       // Enviar al backend
-      await ApiService.sendMessage(userId, content);
+      const data = await ApiService.sendMessage(userId, content);
       
-      // NOTA: En la fase real (OpenAI), aquí recibiremos la respuesta
-      // Por ahora simulamos que llega correctamente.
-      
+      // Agregar la respuesta de la IA a la UI
+      if (data && data.response) {
+        messages.value.push({
+          id: (Date.now() + 1).toString(),
+          role: 'assistant',
+          content: data.response,
+          createdAt: new Date(),
+        });
+      }
     } catch (e: any) {
       error.value = 'Hubo un problema al enviar el mensaje. Intenta de nuevo.';
     } finally {

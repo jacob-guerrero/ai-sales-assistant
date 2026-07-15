@@ -16,16 +16,32 @@ export class WebhookController {
          return;
       }
 
-      console.log(`[Webhook] Mensaje de ${userId}: ${message}`);
+      console.log(`[Webhook] Procesando mensaje de ${userId}: "${message}"`);
 
-      // TODO (Fase 3): 
-      // 1. Buscar hilo activo en threadRepo.
-      // 2. Si no existe, crear uno nuevo en OpenAI y guardarlo.
-      // 3. Procesar mensaje con openAIService.
+      // 1. Buscar hilo activo en Firestore
+      const activeSession = await threadRepo.getActiveThreadByUserId(userId);
+      let threadId = activeSession?.threadId;
+
+      // 2. Si no existe hilo, crear uno nuevo en OpenAI y persistirlo
+      if (!threadId) {
+        console.log(`[Webhook] Creando nuevo hilo para el usuario: ${userId}`);
+        threadId = await openAIService.createThread();
+        
+        await threadRepo.createThread({
+          threadId,
+          userId,
+          status: 'active',
+          createdAt: new Date(),
+          lastActivity: new Date()
+        });
+      }
+
+      // 3. Procesar mensaje con la API de OpenAI
+      const aiResponse = await openAIService.processMessage(threadId, message);
       
-      res.json({ success: true, message: 'Mensaje recibido y encolado.' });
+      // Retornar la respuesta al frontend
+      res.json({ success: true, response: aiResponse });
     } catch (error) {
-      // Mandamos el error al middleware global
       next(error); 
     }
   }
